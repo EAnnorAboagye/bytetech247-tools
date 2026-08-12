@@ -3,8 +3,9 @@
 # Serves the static Astro build via the [assets] binding and injects a
 # per-request CSP header in worker/index.ts, falling through to
 # static-asset serving for everything else. The custom domain
-# tools.bytetech247.com (bound in the dashboard under Settings -> Domains &
-# Routes, once the Worker exists) is the only public entry point.
+# tools.bytetech247.com (provisioned automatically via the [[routes]]
+# custom_domain block below, on the first `wrangler deploy`) is the only
+# public entry point.
 name = "bytetech247-tools"
 main = "worker/index.ts"
 compatibility_date = "2026-08-12"
@@ -28,3 +29,11 @@ not_found_handling = "404-page"
 # itself — required for the CSP-header-injection logic below to actually
 # run on every page.
 run_worker_first = true
+
+# Custom domain, provisioned automatically on `wrangler deploy` — no
+# manual dashboard step. Requires the bytetech247.com zone to already
+# exist in this Cloudflare account (it does; that's where the main site
+# lives). Cloudflare creates the DNS record and edge cert itself.
+[[routes]]
+pattern = "tools.bytetech247.com"
+custom_domain = true
