@@ -1,0 +1,30 @@
+# A single native Cloudflare Worker named "bytetech247-tools" — deliberately
+# not Cloudflare Pages, matching the main bytetech247.com site's pattern.
+# Serves the static Astro build via the [assets] binding and injects a
+# per-request CSP header in worker/index.ts, falling through to
+# static-asset serving for everything else. The custom domain
+# tools.bytetech247.com (bound in the dashboard under Settings -> Domains &
+# Routes, once the Worker exists) is the only public entry point.
+name = "bytetech247-tools"
+main = "worker/index.ts"
+compatibility_date = "2026-08-12"
+# wrangler's own default is workers_dev = true, which would publish this
+# same Worker a second time at bytetech247-tools.workers.dev — an
+# unbranded, unintended duplicate. Pinned to false so that stays true
+# regardless of any future dashboard toggle or local Wrangler default.
+workers_dev = false
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+# Without this, Workers Static Assets returns an empty-body 404 for any
+# unmatched route even once dist/404.html exists.
+not_found_handling = "404-page"
+# A request that matches a real static asset file (which the calculator
+# page does — it's built as index.html) is served directly from the
+# assets store WITHOUT ever invoking worker/index.ts's fetch(), unless
+# this is set. This makes every request run the Worker first, which then
+# explicitly defers to env.ASSETS.fetch() for anything it doesn't handle
+# itself — required for the CSP-header-injection logic below to actually
+# run on every page.
+run_worker_first = true

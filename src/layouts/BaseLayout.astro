@@ -1,0 +1,92 @@
+---
+import { siteConfig } from "../config";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, siteConfig.url).toString();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Pass-through Trusted Types `default` policy, registered before
+         any other script runs. Required because the CSP set by
+         worker/index.ts includes `require-trusted-types-for 'script'`,
+         and AdSense's own internal script injection ships no Trusted
+         Types policy of its own — this accepts any unqualified sink
+         usage the same way the main bytetech247.com site's identical
+         policy does. -->
+    <script is:inline>
+      if (window.trustedTypes?.createPolicy) {
+        window.trustedTypes.createPolicy("default", {
+          createHTML: (html) => html,
+          createScript: (script) => script,
+          createScriptURL: (url) => url,
+        });
+      }
+    </script>
+    <script is:inline>
+      // Applied before first paint to avoid a flash of the wrong theme.
+      // No astro:after-swap re-application needed — this is a single
+      // static page with no client-side navigation between pages.
+      function applyStoredTheme() {
+        const stored = localStorage.getItem("theme");
+        const theme =
+          stored ??
+          (window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+      applyStoredTheme();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <!-- AdSense loader + activation script — plumbed in now so the site
+         "looks ad-ready" whenever adsensePublisherId is filled in and
+         AdSlot instances get real slot IDs (src/config.ts), but with an
+         empty publisher ID this script has nothing to load and is a
+         no-op. -->
+    {
+      siteConfig.adsensePublisherId && (
+        <script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${siteConfig.adsensePublisherId}`}
+          crossorigin="anonymous"
+        />
+      )
+    }
+    <script is:inline>
+      window.addEventListener("load", () => {
+        const unfilled = document.querySelectorAll(
+          "ins.adsbygoogle:not([data-adsbygoogle-status])",
+        );
+        for (let i = 0; i < unfilled.length; i++) {
+          try {
+            (window.adsbygoogle = window.adsbygoogle || []).push({});
+          } catch {
+            // AdSense script blocked (ad blocker, offline, not yet
+            // approved) — every slot's reserved min-height keeps layout
+            // stable either way.
+          }
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

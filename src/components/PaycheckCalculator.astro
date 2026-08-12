@@ -1,0 +1,380 @@
+---
+import Badge from "./Badge.astro";
+import { NO_INCOME_TAX_STATES } from "../lib/paycheck-tax";
+---
+
+<div class="calculator" data-paycheck-calculator>
+  <form class="calculator__form" data-paycheck-form>
+    <div class="calculator__field">
+      <label for="salary">Annual salary</label>
+      <input
+        type="number"
+        id="salary"
+        name="salary"
+        inputmode="decimal"
+        min="0"
+        step="100"
+        value="60000"
+        required
+      />
+    </div>
+
+    <div class="calculator__field">
+      <label for="filingStatus">Filing status</label>
+      <select id="filingStatus" name="filingStatus">
+        <option value="single">Single</option>
+        <option value="marriedJointly">Married filing jointly</option>
+        <option value="marriedSeparately">Married filing separately</option>
+        <option value="headOfHousehold">Head of household</option>
+      </select>
+    </div>
+
+    <div class="calculator__field">
+      <label for="payFrequency">Pay frequency</label>
+      <select id="payFrequency" name="payFrequency">
+        <option value="weekly">Weekly</option>
+        <option value="biweekly" selected>Biweekly (every 2 weeks)</option>
+        <option value="semimonthly">Semimonthly (twice a month)</option>
+        <option value="monthly">Monthly</option>
+        <option value="annual">Annual</option>
+      </select>
+    </div>
+
+    <div class="calculator__field">
+      <label for="state">State</label>
+      <select id="state" name="state">
+        <option value="none">No state income tax on wages</option>
+        {
+          NO_INCOME_TAX_STATES.map((code) => (
+            <option value={`exact:${code}`}>
+              {code} (no state income tax)
+            </option>
+          ))
+        }
+        <option value="manual">Another state — enter your rate</option>
+      </select>
+    </div>
+
+    <div class="calculator__field" data-manual-rate-field hidden>
+      <label for="manualRate">Your state's effective tax rate (%)</label>
+      <input
+        type="number"
+        id="manualRate"
+        name="manualRate"
+        inputmode="decimal"
+        min="0"
+        max="20"
+        step="0.1"
+        value="5"
+      />
+    </div>
+  </form>
+
+  <div class="calculator__results" data-paycheck-results>
+    <div class="calculator__result-primary">
+      <p class="calculator__result-label">Take-home pay per paycheck</p>
+      <p class="calculator__result-value" data-net-per-period>$0.00</p>
+      <p class="calculator__result-sub" data-net-annual>$0 per year</p>
+    </div>
+
+    <dl class="calculator__breakdown">
+      <div>
+        <dt>Gross pay per paycheck</dt>
+        <dd data-gross-per-period>$0.00</dd>
+      </div>
+      <div>
+        <dt>
+          Federal income tax <Badge intent="accent">Exact</Badge>
+        </dt>
+        <dd data-federal-tax>$0</dd>
+      </div>
+      <div>
+        <dt>Social Security (6.2%)</dt>
+        <dd data-social-security>$0</dd>
+      </div>
+      <div>
+        <dt>Medicare (1.45%)</dt>
+        <dd data-medicare>$0</dd>
+      </div>
+      <div data-additional-medicare-row hidden>
+        <dt>Additional Medicare Tax (0.9%)</dt>
+        <dd data-additional-medicare>$0</dd>
+      </div>
+      <div>
+        <dt>
+          State income tax <span data-state-tax-badge></span>
+        </dt>
+        <dd data-state-tax>$0</dd>
+      </div>
+    </dl>
+  </div>
+</div>
+
+<script>
+  import {
+    computeTakeHomePay,
+    type FilingStatus,
+    type PayFrequency,
+    type StateTaxInput,
+  } from "../lib/paycheck-tax";
+
+  const currency = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  });
+  const currencyPrecise = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  });
+
+  function setup() {
+    const root = document.querySelector<HTMLElement>(
+      "[data-paycheck-calculator]",
+    );
+    if (!root) return;
+
+    const form = root.querySelector<HTMLFormElement>("[data-paycheck-form]");
+    const salaryInput = root.querySelector<HTMLInputElement>("#salary");
+    const filingStatusSelect =
+      root.querySelector<HTMLSelectElement>("#filingStatus");
+    const payFrequencySelect =
+      root.querySelector<HTMLSelectElement>("#payFrequency");
+    const stateSelect = root.querySelector<HTMLSelectElement>("#state");
+    const manualRateInput = root.querySelector<HTMLInputElement>("#manualRate");
+    const manualRateField = root.querySelector<HTMLElement>(
+      "[data-manual-rate-field]",
+    );
+
+    const netPerPeriodEl = root.querySelector("[data-net-per-period]");
+    const netAnnualEl = root.querySelector("[data-net-annual]");
+    const grossPerPeriodEl = root.querySelector("[data-gross-per-period]");
+    const federalTaxEl = root.querySelector("[data-federal-tax]");
+    const socialSecurityEl = root.querySelector("[data-social-security]");
+    const medicareEl = root.querySelector("[data-medicare]");
+    const additionalMedicareRow = root.querySelector<HTMLElement>(
+      "[data-additional-medicare-row]",
+    );
+    const additionalMedicareEl = root.querySelector(
+      "[data-additional-medicare]",
+    );
+    const stateTaxEl = root.querySelector("[data-state-tax]");
+    const stateTaxBadgeEl = root.querySelector("[data-state-tax-badge]");
+
+    if (
+      !form ||
+      !salaryInput ||
+      !filingStatusSelect ||
+      !payFrequencySelect ||
+      !stateSelect ||
+      !manualRateInput ||
+      !manualRateField ||
+      !netPerPeriodEl ||
+      !netAnnualEl ||
+      !grossPerPeriodEl ||
+      !federalTaxEl ||
+      !socialSecurityEl ||
+      !medicareEl ||
+      !additionalMedicareRow ||
+      !additionalMedicareEl ||
+      !stateTaxEl ||
+      !stateTaxBadgeEl
+    ) {
+      return;
+    }
+
+    function resolveStateTax(): StateTaxInput {
+      const value = stateSelect!.value;
+      if (value === "manual") {
+        const rate = Number.parseFloat(manualRateInput!.value);
+        return {
+          type: "manual",
+          effectiveRatePercent: Number.isFinite(rate) ? rate : 0,
+        };
+      }
+      // "none" and every "exact:<STATE>" option both mean 0% — the state
+      // code itself doesn't change the math, only the label shown.
+      return { type: "none" };
+    }
+
+    function setBadge(target: Element, exact: boolean) {
+      target.innerHTML = "";
+      const badge = document.createElement("span");
+      badge.className = exact
+        ? "inline-flex items-center rounded-full font-medium text-xs px-2 py-0.5 bg-accent text-accent-fg"
+        : "inline-flex items-center rounded-full font-medium text-xs px-2 py-0.5 bg-bg-subtle text-fg-muted";
+      badge.textContent = exact ? "Exact" : "Estimated";
+      target.appendChild(badge);
+    }
+
+    function update() {
+      manualRateField!.hidden = stateSelect!.value !== "manual";
+
+      const annualSalary = Math.max(
+        0,
+        Number.parseFloat(salaryInput!.value) || 0,
+      );
+      const filingStatus = filingStatusSelect!.value as FilingStatus;
+      const payFrequency = payFrequencySelect!.value as PayFrequency;
+      const stateTax = resolveStateTax();
+
+      const result = computeTakeHomePay({
+        annualSalary,
+        filingStatus,
+        payFrequency,
+        stateTax,
+      });
+
+      netPerPeriodEl!.textContent = currencyPrecise.format(result.netPerPeriod);
+      netAnnualEl!.textContent = `${currency.format(result.netAnnual)} per year`;
+      grossPerPeriodEl!.textContent = currencyPrecise.format(
+        result.grossPerPeriod,
+      );
+      federalTaxEl!.textContent = currency.format(result.federalTaxAnnual);
+      socialSecurityEl!.textContent = currency.format(
+        result.fica.socialSecurity,
+      );
+      medicareEl!.textContent = currency.format(result.fica.medicare);
+
+      if (result.fica.additionalMedicare > 0) {
+        additionalMedicareRow!.hidden = false;
+        additionalMedicareEl!.textContent = currency.format(
+          result.fica.additionalMedicare,
+        );
+      } else {
+        additionalMedicareRow!.hidden = true;
+      }
+
+      stateTaxEl!.textContent = currency.format(result.stateTaxAnnual);
+      setBadge(stateTaxBadgeEl!, result.stateTaxIsExact);
+    }
+
+    form.addEventListener("input", update);
+    update();
+  }
+
+  document.addEventListener("DOMContentLoaded", setup);
+</script>
+
+<style>
+  .calculator {
+    display: grid;
+    gap: calc(var(--spacing) * 6);
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 48rem) {
+    .calculator {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+  }
+
+  .calculator__form {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 4);
+    padding: calc(var(--spacing) * 4);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background-color: var(--color-bg-subtle);
+  }
+
+  .calculator__field {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 1);
+  }
+
+  .calculator__field label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-fg-muted);
+  }
+
+  .calculator__field input,
+  .calculator__field select {
+    font: inherit;
+    font-size: var(--text-base);
+    padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  .calculator__field input:focus-visible,
+  .calculator__field select:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+
+  .calculator__results {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 4);
+  }
+
+  .calculator__result-primary {
+    padding: calc(var(--spacing) * 5);
+    border-radius: 0.75rem;
+    background-color: var(--color-positive);
+    color: var(--color-positive-fg);
+  }
+
+  .calculator__result-label {
+    margin: 0 0 calc(var(--spacing) * 1);
+    font-size: var(--text-sm);
+    opacity: 0.85;
+  }
+
+  .calculator__result-value {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: 700;
+  }
+
+  .calculator__result-sub {
+    margin: calc(var(--spacing) * 1) 0 0;
+    font-size: var(--text-sm);
+    opacity: 0.85;
+  }
+
+  .calculator__breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 2);
+    margin: 0;
+    padding: calc(var(--spacing) * 4);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+  }
+
+  .calculator__breakdown > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 2);
+    padding-block: calc(var(--spacing) * 1);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .calculator__breakdown > div:last-child {
+    border-bottom: none;
+  }
+
+  .calculator__breakdown dt {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1);
+    font-size: var(--text-sm);
+    color: var(--color-fg-muted);
+  }
+
+  .calculator__breakdown dd {
+    margin: 0;
+    font-weight: 600;
+  }
+</style>

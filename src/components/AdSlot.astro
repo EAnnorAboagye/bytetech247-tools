@@ -1,0 +1,53 @@
+---
+// Manual, CLS-safe ad placement, ported as-is from the main
+// bytetech247.com site's src/components/AdSlot.astro. Renders nothing if
+// no slot ID is configured in src/config.ts (siteConfig.adSlots) — a
+// missing slot ID is a safe no-op, not a broken <ins> tag with an empty
+// data-ad-slot. Every value in siteConfig.adSlots stays "" until the
+// AdSense account for this property is actually approved.
+//
+// The reserved minHeight is load-bearing, not decorative: it's set
+// before the AdSense script has run, so the layout never shifts once the
+// creative (or nothing, if unfilled) loads in.
+//
+// Prop is named `adSlot`, not `slot` — Astro reserves a `slot` attribute
+// on any component tag for named-slot content projection. A component
+// prop literally named `slot`, used as a direct child of a real
+// component, gets silently intercepted and the whole instance vanishes
+// with no error — this bit the main site once already.
+import { siteConfig } from "../config";
+
+interface Props {
+  adSlot: string;
+  minHeight: string;
+  label?: string;
+  class?: string;
+}
+
+const {
+  adSlot,
+  minHeight,
+  label = "Advertisement",
+  class: className,
+} = Astro.props;
+const adClient = siteConfig.adsensePublisherId;
+---
+
+{
+  adSlot && (
+    <div
+      class:list={["ad-slot", className]}
+      style={`--ad-slot-min-height: ${minHeight}`}
+    >
+      <p class="ad-slot__label">{label}</p>
+      <ins
+        class="adsbygoogle"
+        style="display:block;width:100%;height:100%"
+        data-ad-client={adClient}
+        data-ad-slot={adSlot}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+    </div>
+  )
+}

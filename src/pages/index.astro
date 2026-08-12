@@ -1,0 +1,110 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PaycheckCalculator from "../components/PaycheckCalculator.astro";
+import AdSlot from "../components/AdSlot.astro";
+import { siteConfig } from "../config";
+import { TAX_YEAR } from "../lib/paycheck-tax";
+
+const title = "Paycheck Calculator (2026) — Free Take-Home Pay Estimator";
+const description =
+  "Free 2026 paycheck calculator. Exact federal tax and FICA, sourced directly from the IRS — no forced signup, no tracking.";
+---
+
+<BaseLayout title={title} description={description}>
+  <main class="page">
+    <AdSlot
+      adSlot={siteConfig.adSlots.header}
+      minHeight="100px"
+      label="Advertisement"
+    />
+
+    <header class="page__intro">
+      <h1>Paycheck Calculator</h1>
+      <p>
+        See your real take-home pay after federal tax and FICA, calculated from
+        the actual {TAX_YEAR} IRS tax brackets, not a rough estimate. State tax is
+        exact for the 9 states with no wage income tax, and an honest, clearly-labeled
+        estimate everywhere else.
+      </p>
+      <p class="page__privacy-note">
+        No signup, no fingerprinting, no tracking scripts beyond a lightweight,
+        privacy-respecting analytics beacon. Your salary never leaves your
+        browser — every calculation on this page runs locally.
+      </p>
+    </header>
+
+    <PaycheckCalculator />
+
+    <AdSlot
+      adSlot={siteConfig.adSlots.afterResults}
+      minHeight="250px"
+      label="Advertisement"
+    />
+
+    <section class="page__methodology">
+      <h2>How this is calculated</h2>
+      <p>
+        Federal income tax uses the actual {TAX_YEAR} tax brackets and standard deduction,
+        sourced directly from the IRS's own tax year
+        {TAX_YEAR} inflation-adjustment announcement (Revenue Procedure 2025-32).
+        FICA uses the {TAX_YEAR} Social Security wage base and the standard 6.2% /
+        1.45% rates, plus the Additional Medicare Tax above the statutory threshold
+        for your filing status.
+      </p>
+      <p>
+        State tax is exact — 0% — for the 9 states with no tax on wage income:
+        Alaska, Florida, Nevada, New Hampshire, South Dakota, Tennessee, Texas,
+        Washington, and Wyoming. For every other state, this tool asks for your
+        own effective state tax rate rather than presenting an unverified number
+        as fact. That result is clearly labeled <strong>Estimated</strong>,
+        never <strong>Exact</strong>.
+      </p>
+      <p>
+        Not included yet: pre-tax deductions (401(k), health insurance),
+        itemized deductions, and city/local income tax. This calculator assumes
+        the standard deduction and no pre-tax withholding.
+      </p>
+    </section>
+
+    <AdSlot
+      adSlot={siteConfig.adSlots.beforeMethodology}
+      minHeight="250px"
+      label="Advertisement"
+    />
+  </main>
+</BaseLayout>
+
+<style>
+  .page {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 6);
+    padding-block: calc(var(--spacing) * 6);
+  }
+
+  .page__intro h1 {
+    font-size: var(--text-4xl);
+    margin: 0 0 calc(var(--spacing) * 3);
+  }
+
+  .page__intro p {
+    color: var(--color-fg-muted);
+    line-height: 1.6;
+    margin: 0 0 calc(var(--spacing) * 2);
+  }
+
+  .page__privacy-note {
+    font-size: var(--text-sm);
+  }
+
+  .page__methodology h2 {
+    font-size: var(--text-2xl);
+    margin: 0 0 calc(var(--spacing) * 3);
+  }
+
+  .page__methodology p {
+    color: var(--color-fg-muted);
+    line-height: 1.6;
+    margin: 0 0 calc(var(--spacing) * 3);
+  }
+</style>
