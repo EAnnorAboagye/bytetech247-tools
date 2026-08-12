@@ -1,0 +1,107 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config";
+
+const title = "Privacy Policy — ByteTech247 Tools";
+const description =
+  "What ByteTech247 Tools collects (nothing you enter in the calculator), how Google Analytics and AdSense cookies work, and how to opt out.";
+
+const effectiveDate = "August 12, 2026";
+---
+
+<BaseLayout title={title} description={description}>
+  <main class="content-page">
+    <h1>Privacy Policy</h1>
+    <p>Effective {effectiveDate}.</p>
+
+    <section>
+      <h2>What we collect from the calculator: nothing</h2>
+      <p>
+        Every number you enter into the Paycheck Calculator — salary, filing
+        status, state, pay frequency — is processed entirely inside your own
+        browser. None of it is sent to a server, logged, or stored anywhere.
+        Close the tab and it's gone. There's no account, no signup, and no
+        database of past calculations to leak.
+      </p>
+    </section>
+
+    <section>
+      <h2>Analytics and tracking</h2>
+      <p>
+        This site uses Google Analytics to understand aggregate traffic — which
+        pages are visited, how many people visit, general navigation patterns.
+        Google Analytics uses cookies to do this. None of the numbers you enter
+        into the calculator itself are part of this — that data never reaches a
+        server in the first place (see above). You can opt out of Google
+        Analytics specifically with the{" "}
+        <a
+          href="https://tools.google.com/dlpage/gaoptout"
+          target="_blank"
+          rel="noopener noreferrer">Google Analytics Opt-out Browser Add-on</a
+        >.
+      </p>
+    </section>
+
+    <section>
+      <h2>Routine hosting logs</h2>
+      <p>
+        Like any website, requests to this site pass through Cloudflare Workers,
+        which may briefly retain standard operational logs (IP address, user
+        agent, timestamp) for security and reliability purposes. This is routine
+        web-hosting infrastructure, not a tracking mechanism specific to this
+        site, and it's separate from — and much less than — the analytics
+        tracking described above.
+      </p>
+    </section>
+
+    <section>
+      <h2>Advertising (Google AdSense)</h2>
+      <p>
+        This site displays or intends to display advertising through Google
+        AdSense. Google and its advertising partners use cookies to serve ads
+        based on a user's prior visits to this or other websites. You can opt
+        out of personalized advertising by visiting{" "}
+        <a
+          href="https://adssettings.google.com"
+          target="_blank"
+          rel="noopener noreferrer">Google Ads Settings</a
+        >, or opt out of many third-party vendors' use of cookies for
+        personalized advertising by visiting{" "}
+        <a
+          href="https://www.aboutads.info/choices"
+          target="_blank"
+          rel="noopener noreferrer">aboutads.info/choices</a
+        >. Advertising cookies come from Google and its partners once ads are
+        actively serving, separate from the Google Analytics cookies described
+        above.
+      </p>
+    </section>
+
+    <section>
+      <h2>Children's privacy</h2>
+      <p>
+        This site is not directed at children under 13, and it does not
+        knowingly collect personal information from children.
+      </p>
+    </section>
+
+    <section>
+      <h2>Changes to this policy</h2>
+      <p>
+        If this policy changes, the effective date above will be updated.
+        Continued use of the site after a change constitutes acceptance of the
+        updated policy.
+      </p>
+    </section>
+
+    <section>
+      <h2>Contact</h2>
+      <p>
+        Questions about this policy can be sent to{" "}
+        <a href={`mailto:${siteConfig.contactEmail}`}
+          >{siteConfig.contactEmail}</a
+        >.
+      </p>
+    </section>
+  </main>
+</BaseLayout>

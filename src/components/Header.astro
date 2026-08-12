@@ -1,0 +1,67 @@
+---
+// Site-wide nav, rendered once from BaseLayout so every page — this one
+// and every future page — is reachable without a per-page opt-in step.
+// No hamburger/JS toggle: with only a handful of links, flex-wrap handles
+// narrow viewports with zero new client script or interactive state.
+import { siteConfig } from "../config";
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a href="/" class="site-header__wordmark">{siteConfig.name}</a>
+    <nav class="site-header__nav" aria-label="Primary">
+      {
+        siteConfig.nav.map((item) => (
+          <a
+            href={item.href}
+            aria-current={currentPath === item.href ? "page" : undefined}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .site-header__inner {
+    max-width: 64rem;
+    margin-inline: auto;
+    padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 3);
+  }
+
+  .site-header__wordmark {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-lg);
+    color: var(--color-fg);
+  }
+
+  .site-header__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--spacing) * 4);
+  }
+
+  .site-header__nav a {
+    color: var(--color-fg-muted);
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  .site-header__nav a[aria-current="page"] {
+    color: var(--color-accent);
+  }
+</style>

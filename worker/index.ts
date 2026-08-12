@@ -96,8 +96,24 @@ function applyCsp(response: Response, nonce: string): Response {
   });
 }
 
+// This site moved from tools.bytetech247.com to a dedicated per-tool
+// subdomain (see wrangler.toml). Both that old domain and the www
+// variant of the new one stay routed to this same Worker solely to 301
+// anyone who lands on them to the one canonical hostname.
+const CANONICAL_HOSTNAME = "paycheckcalculator.bytetech247.com";
+const REDIRECT_HOSTNAMES = new Set([
+  "tools.bytetech247.com",
+  `www.${CANONICAL_HOSTNAME}`,
+]);
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    if (REDIRECT_HOSTNAMES.has(url.hostname)) {
+      url.hostname = CANONICAL_HOSTNAME;
+      return Response.redirect(url.toString(), 301);
+    }
+
     // Computed once per request, reused at every HTML return point below
     // so a single response never mixes two different nonce values.
     const nonce = await deriveNonce(env.CSP_NONCE_SECRET);

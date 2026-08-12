@@ -3,9 +3,13 @@
 # Serves the static Astro build via the [assets] binding and injects a
 # per-request CSP header in worker/index.ts, falling through to
 # static-asset serving for everything else. The custom domain
-# tools.bytetech247.com (provisioned automatically via the [[routes]]
-# custom_domain block below, on the first `wrangler deploy`) is the only
-# public entry point.
+# paycheckcalculator.bytetech247.com (provisioned automatically via the
+# [[routes]] custom_domain blocks below, on `wrangler deploy`) is the
+# primary public entry point. tools.bytetech247.com (this site's
+# original domain before the switch to a per-tool subdomain) and
+# www.paycheckcalculator.bytetech247.com both stay routed to the same
+# Worker solely so worker/index.ts can 301-redirect them to the
+# canonical bare domain — neither is a second live site.
 name = "bytetech247-tools"
 main = "worker/index.ts"
 compatibility_date = "2026-08-12"
@@ -30,10 +34,19 @@ not_found_handling = "404-page"
 # run on every page.
 run_worker_first = true
 
-# Custom domain, provisioned automatically on `wrangler deploy` — no
+# Custom domains, provisioned automatically on `wrangler deploy` — no
 # manual dashboard step. Requires the bytetech247.com zone to already
 # exist in this Cloudflare account (it does; that's where the main site
 # lives). Cloudflare creates the DNS record and edge cert itself.
 [[routes]]
+pattern = "paycheckcalculator.bytetech247.com"
+custom_domain = true
+
+# Kept live only to redirect — see the top-of-file comment.
+[[routes]]
 pattern = "tools.bytetech247.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.paycheckcalculator.bytetech247.com"
 custom_domain = true

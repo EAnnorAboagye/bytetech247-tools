@@ -1,0 +1,79 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config";
+import { TAX_YEAR } from "../lib/paycheck-tax";
+
+const title = "About — ByteTech247 Tools";
+const description =
+  "Who builds ByteTech247 Tools and why the paycheck calculator sources every figure directly from the IRS instead of guessing.";
+---
+
+<BaseLayout title={title} description={description}>
+  <main class="content-page">
+    <h1>About</h1>
+
+    <section>
+      <h2>Built to be honest, not just convenient</h2>
+      <p>
+        The Paycheck Calculator exists because most take-home-pay tools online
+        quietly guess. This one doesn't: federal income tax and FICA are
+        computed from the actual {TAX_YEAR} IRS tax brackets and standard deduction,
+        sourced directly from the IRS's own tax-year {TAX_YEAR}{" "}
+        inflation-adjustment announcement. When a number can be verified against a
+        primary source, it's labeled <strong>Exact</strong>. When it can't —
+        most state income tax, which this tool doesn't model — it's labeled <strong
+          >Estimated</strong
+        >, never dressed up as fact.
+      </p>
+    </section>
+
+    <section>
+      <h2>Who built this</h2>
+      <p>
+        Aboagye Annor builds and maintains ByteTech247 Tools as an independent,
+        solo project. It isn't a company, and it isn't a team of CPAs or
+        financial advisors — it's one person's attempt to build the kind of
+        calculator they'd actually want to use themselves.
+      </p>
+      <p>
+        That also means this site is not a financial institution, and nothing it
+        calculates is professional tax or financial advice. For anything
+        consequential — a big life decision, a dispute with an employer, an
+        actual tax filing — verify the numbers with a CPA or the IRS directly.
+      </p>
+    </section>
+
+    <section>
+      <h2>How the numbers stay accurate</h2>
+      <p>
+        Federal figures are refreshed at the start of each tax year against the
+        IRS's own published Revenue Procedure, not a third-party summary of it.
+        If something looks wrong, that's worth reporting — see{" "}
+        <a href="/contact">Contact</a>.
+      </p>
+    </section>
+
+    <section>
+      <h2>What this isn't</h2>
+      <ul>
+        <li>
+          Not a signup — there's no account, no saved data, no email capture.
+        </li>
+        <li>
+          Not a data collector — see the <a href="/privacy">Privacy Policy</a> for
+          exactly what that means.
+        </li>
+        <li>Not professional tax or financial advice.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Part of a growing family</h2>
+      <p>
+        {siteConfig.name} is the first of a planned family of small, focused tools
+        under the ByteTech247 name — each one built around a single job done honestly,
+        rather than a bundle of everything at once.
+      </p>
+    </section>
+  </main>
+</BaseLayout>

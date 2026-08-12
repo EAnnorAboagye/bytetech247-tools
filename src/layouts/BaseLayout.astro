@@ -1,13 +1,19 @@
 ---
 import { siteConfig } from "../config";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import CookieConsent from "../components/CookieConsent.astro";
 import "../styles/global.css";
 
 interface Props {
   title: string;
   description: string;
+  // Absolute URL. Optional — most pages (calculator, About, FAQ...) have
+  // no dedicated image and just omit it; blog posts pass their hero image.
+  image?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, image } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, siteConfig.url).toString();
 ---
 
@@ -47,6 +53,7 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.url).toString();
       applyStoredTheme();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl} />
@@ -54,39 +61,17 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.url).toString();
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary" />
-    <!-- AdSense loader + activation script — plumbed in now so the site
-         "looks ad-ready" whenever adsensePublisherId is filled in and
-         AdSlot instances get real slot IDs (src/config.ts), but with an
-         empty publisher ID this script has nothing to load and is a
-         no-op. -->
-    {
-      siteConfig.adsensePublisherId && (
-        <script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${siteConfig.adsensePublisherId}`}
-          crossorigin="anonymous"
-        />
-      )
-    }
-    <script is:inline>
-      window.addEventListener("load", () => {
-        const unfilled = document.querySelectorAll(
-          "ins.adsbygoogle:not([data-adsbygoogle-status])",
-        );
-        for (let i = 0; i < unfilled.length; i++) {
-          try {
-            (window.adsbygoogle = window.adsbygoogle || []).push({});
-          } catch {
-            // AdSense script blocked (ad blocker, offline, not yet
-            // approved) — every slot's reserved min-height keeps layout
-            // stable either way.
-          }
-        }
-      });
-    </script>
+    {image && <meta property="og:image" content={image} />}
+    <meta
+      name="twitter:card"
+      content={image ? "summary_large_image" : "summary"}
+    />
+    {image && <meta name="twitter:image" content={image} />}
   </head>
   <body>
+    <Header />
     <slot />
+    <Footer />
+    <CookieConsent />
   </body>
 </html>

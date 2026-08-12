@@ -15,10 +15,16 @@ const card = cva(
   },
 );
 
-type Props = VariantProps<typeof card> & { as?: string; class?: string };
-const { padding, as: Tag = "div", class: className } = Astro.props;
+// Record<string, unknown> lets callers pass through arbitrary attributes
+// (e.g. href when as="a") — needed now that Card has its first real
+// consumer using it as a link, not just a div.
+type Props = VariantProps<typeof card> & {
+  as?: string;
+  class?: string;
+} & Record<string, unknown>;
+const { padding, as: Tag = "div", class: className, ...rest } = Astro.props;
 ---
 
-<Tag class:list={[card({ padding }), className]}>
+<Tag class:list={[card({ padding }), className]} {...rest}>
   <slot />
 </Tag>

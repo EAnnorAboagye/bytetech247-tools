@@ -1,0 +1,28 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../config";
+
+const title = "Contact — ByteTech247 Tools";
+const description =
+  "Found a bug, have feedback, or spotted a wrong number? Get in touch.";
+---
+
+<BaseLayout title={title} description={description}>
+  <main class="content-page">
+    <h1>Contact</h1>
+
+    <section>
+      <p>
+        Found a bug, have feedback, or think a number looks wrong? Email{" "}
+        <a href={`mailto:${siteConfig.contactEmail}`}
+          >{siteConfig.contactEmail}</a
+        >.
+      </p>
+      <p>
+        This inbox is best for bug reports and feedback on the tool itself — it
+        isn't a channel for personalized tax or financial advice, and there's no
+        guaranteed response time.
+      </p>
+    </section>
+  </main>
+</BaseLayout>

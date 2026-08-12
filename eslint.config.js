@@ -10,7 +10,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   ...eslintPluginAstro.configs.recommended,
   {
-    files: ["*.config.mjs", "*.config.js"],
+    files: ["*.config.mjs", "*.config.js", "scripts/**/*.mjs"],
     languageOptions: {
       globals: { ...globals.node },
     },

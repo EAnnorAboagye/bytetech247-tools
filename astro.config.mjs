@@ -1,10 +1,12 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
+import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://tools.bytetech247.com",
+  site: "https://paycheckcalculator.bytetech247.com",
+  integrations: [sitemap()],
   vite: {
     plugins: [tailwindcss()],
   },

@@ -1,0 +1,140 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { Image, getImage } from "astro:assets";
+import BaseLayout from "./BaseLayout.astro";
+import AdSlot from "../components/AdSlot.astro";
+import Card from "../components/Card.astro";
+import { siteConfig } from "../config";
+
+interface Props {
+  post: CollectionEntry<"blog">;
+}
+
+const { post } = Astro.props;
+const {
+  title,
+  description,
+  publishDate,
+  updatedDate,
+  heroImage,
+  heroImageAlt,
+} = post.data;
+
+// Frontmatter dates are date-only ("2026-08-12"), which z.coerce.date()
+// parses as UTC midnight — formatting in the build machine's local
+// timezone would shift the displayed date back a day west of UTC.
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
+// BaseLayout already computes the canonical <link> from Astro.url.pathname
+// for every page — this is a separate value, only for the JSON-LD "url"
+// field below.
+const canonicalUrl = new URL(`/blog/${post.id}/`, siteConfig.url).toString();
+
+// getImage() runs the same optimization <Image> would, without rendering
+// a tag — needed here because content-collection images live outside
+// public/ and only become servable through this pipeline. Reused for both
+// the og:image/twitter:image meta tags (via BaseLayout) and the
+// BlogPosting JSON-LD's required `image` field (Google's structured data
+// guidelines list it as required for Article/BlogPosting rich-result
+// eligibility).
+const optimizedHero = await getImage({ src: heroImage });
+const heroImageUrl = new URL(optimizedHero.src, siteConfig.url).toString();
+
+const postJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: title,
+  description,
+  image: heroImageUrl,
+  url: canonicalUrl,
+  datePublished: publishDate.toISOString(),
+  ...(updatedDate ? { dateModified: updatedDate.toISOString() } : {}),
+  author: { "@type": "Person", name: siteConfig.authorName },
+};
+// Same defensive escaping as faq.astro's FAQPage JSON-LD.
+const postJsonLdString = JSON.stringify(postJsonLd).replace(/</g, "\\u003c");
+---
+
+<BaseLayout
+  title={`${title} | ${siteConfig.name}`}
+  description={description}
+  image={heroImageUrl}
+>
+  <script type="application/ld+json" set:html={postJsonLdString} is:inline />
+
+  <main class="content-page">
+    <h1>{title}</h1>
+    <p class="post-byline">
+      By {siteConfig.authorName} ·{" "}
+      <time datetime={publishDate.toISOString()}>
+        {dateFormatter.format(publishDate)}
+      </time>
+      {
+        updatedDate && (
+          <>
+            {" "}
+            · Updated{" "}
+            <time datetime={updatedDate.toISOString()}>
+              {dateFormatter.format(updatedDate)}
+            </time>
+          </>
+        )
+      }
+    </p>
+
+    <Image
+      src={heroImage}
+      alt={heroImageAlt}
+      class="post-hero"
+      widths={[600, 900, 1200]}
+      sizes="(min-width: 1024px) 1024px, 100vw"
+    />
+
+    <AdSlot
+      adSlot={siteConfig.adSlots.blogPostTop}
+      minHeight="100px"
+      label="Advertisement"
+    />
+
+    <section class="post-body">
+      <slot />
+    </section>
+
+    <AdSlot
+      adSlot={siteConfig.adSlots.blogPostBottom}
+      minHeight="250px"
+      label="Advertisement"
+    />
+
+    <Card padding="md" class="post-cta">
+      <p>Want your actual take-home pay, not just the theory?</p>
+      <a href="/">Try the Paycheck Calculator →</a>
+    </Card>
+  </main>
+</BaseLayout>
+
+<style>
+  .post-byline {
+    color: var(--color-fg-muted);
+    font-size: var(--text-sm);
+  }
+
+  .post-hero {
+    width: 100%;
+    height: auto;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-border);
+  }
+
+  .post-cta {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 2);
+    text-align: center;
+  }
+</style>

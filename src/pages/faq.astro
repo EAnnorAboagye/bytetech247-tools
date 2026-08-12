@@ -1,0 +1,101 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { TAX_YEAR } from "../lib/paycheck-tax";
+
+const title = "FAQ — Paycheck Calculator | ByteTech247 Tools";
+const description =
+  "Answers to common questions about the paycheck calculator's accuracy, what it does and doesn't model, and what happens to your data.";
+
+// Single source of truth for both the visible list below and the
+// FAQPage JSON-LD — the structured data must match what's actually
+// rendered on the page, not just what an SEO checklist wants.
+const faqs = [
+  {
+    question: `Is this accurate for the ${TAX_YEAR} tax year?`,
+    answer: `Federal income tax and FICA are computed from the actual ${TAX_YEAR} IRS tax brackets and standard deduction, sourced directly from the IRS's own inflation-adjustment announcement for the year. State tax is exact — $0 — only for the 9 states with no wage income tax; everywhere else it's an estimate based on the rate you enter.`,
+  },
+  {
+    question: `Why does my state show "Estimated" instead of "Exact"?`,
+    answer:
+      "Only 9 states (Alaska, Florida, Nevada, New Hampshire, South Dakota, Tennessee, Texas, Washington, and Wyoming) have no tax on wage income, so those are exact at $0. Every other state's income tax code isn't modeled in this tool, so it asks for your own effective state tax rate instead of presenting an unverified number as fact.",
+  },
+  {
+    question: "Does this account for 401(k) or health insurance deductions?",
+    answer:
+      "Not yet. This calculator currently assumes the standard deduction and no pre-tax withholding — it doesn't model 401(k) contributions, health insurance premiums, or other pre-tax deductions.",
+  },
+  {
+    question: "Is my salary data stored or sent anywhere?",
+    answer:
+      "No. Every calculation runs entirely in your browser — nothing you enter is sent to a server, logged, or stored. See the Privacy Policy for details.",
+  },
+  {
+    question: "What's the difference between gross pay and take-home pay?",
+    answer:
+      "Gross pay is your salary before any taxes are withheld. Take-home pay (net pay) is what's left after federal income tax, FICA (Social Security and Medicare), and state income tax are subtracted.",
+  },
+  {
+    question: "Does this include Social Security and Medicare (FICA)?",
+    answer:
+      "Yes — the standard 6.2% Social Security and 1.45% Medicare rates, plus the Additional Medicare Tax above the statutory threshold for your filing status.",
+  },
+  {
+    question: "Can I calculate from an hourly wage instead of a salary?",
+    answer:
+      "Not currently — this calculator takes an annual salary as input. Hourly-wage support isn't built yet.",
+  },
+  {
+    question: "How often are the tax figures updated?",
+    answer:
+      "At the start of each tax year, against the IRS's own newly published Revenue Procedure for that year.",
+  },
+];
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+};
+
+// Defensive escaping against script-tag breakout in the unlikely event
+// future FAQ content contains a literal "</script>"-adjacent sequence.
+const faqJsonLdString = JSON.stringify(faqJsonLd).replace(/</g, "\\u003c");
+---
+
+<BaseLayout title={title} description={description}>
+  <script type="application/ld+json" set:html={faqJsonLdString} is:inline />
+
+  <main class="content-page">
+    <h1>Frequently Asked Questions</h1>
+
+    <section>
+      {
+        faqs.map((faq) => (
+          <div class="faq-item">
+            <h2>{faq.question}</h2>
+            <p>{faq.answer}</p>
+          </div>
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .faq-item {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 1);
+  }
+
+  .faq-item h2 {
+    font-size: var(--text-lg);
+  }
+</style>
