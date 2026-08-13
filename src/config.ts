@@ -28,9 +28,7 @@ export const siteConfig = {
   // when this is set, same convention as adsensePublisherId below.
   gaMeasurementId: "G-4RDZXGQ56R",
 
-  // Empty until this property is actually approved in AdSense — same
-  // "ca-" prefix requirement as the main site once a real ID exists.
-  adsensePublisherId: "",
+  adsensePublisherId: "ca-pub-2225877475261768",
 
   // Manual AdSense ad-unit slot IDs (Ads -> By ad unit -> Display ads),
   // same convention as the main bytetech247.com site: AdSlot.astro
