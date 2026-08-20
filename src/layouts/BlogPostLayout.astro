@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { Image, getImage } from "astro:assets";
+import { Picture, getImage } from "astro:assets";
 import BaseLayout from "./BaseLayout.astro";
 import AdSlot from "../components/AdSlot.astro";
 import Card from "../components/Card.astro";
@@ -87,12 +87,14 @@ const postJsonLdString = JSON.stringify(postJsonLd).replace(/</g, "\\u003c");
       }
     </p>
 
-    <Image
+    <Picture
       src={heroImage}
       alt={heroImageAlt}
       class="post-hero"
       widths={[600, 900, 1200]}
       sizes="(min-width: 1024px) 1024px, 100vw"
+      formats={["avif", "webp"]}
+      fallbackFormat="webp"
     />
 
     <AdSlot
