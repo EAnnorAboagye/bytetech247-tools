@@ -12,8 +12,17 @@ import { siteConfig } from "../config";
 export const prerender = true;
 
 export function GET() {
-  const body = siteConfig.adsensePublisherId
-    ? `google.com, ${siteConfig.adsensePublisherId}, DIRECT, f08c47fec0942fa0\n`
+  // siteConfig.adsensePublisherId carries the "ca-" prefix required by
+  // the actual ad-serving script's client= param (data-ad-client,
+  // adsbygoogle.js?client=...) — but ads.txt is a different Google spec
+  // with its own format that explicitly does NOT want that prefix (Google
+  // AdSense Help, "Ads.txt guide": "Delete the product-specific prefix
+  // (for example, ca- or ca-video-)"). Stripping it here keeps a single
+  // source of truth in config.ts instead of maintaining two separately
+  // formatted ID strings that could drift out of sync.
+  const publisherId = siteConfig.adsensePublisherId.replace(/^ca-/, "");
+  const body = publisherId
+    ? `google.com, ${publisherId}, DIRECT, f08c47fec0942fa0\n`
     : "";
   return new Response(body, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
