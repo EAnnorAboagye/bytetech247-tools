@@ -15,6 +15,26 @@ interface Props {
 
 const { title, description, image } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, siteConfig.url).toString();
+
+// Google Consent Mode v2, split across two `set:html` scripts so the
+// literal JS text — not an Astro `define:vars` payload — is what lands in
+// the static HTML `<script>` tags below (see the <head> comment for why
+// that split matters). Every visitor defaults to denied; CookieConsent.astro
+// sends the 'update' call once they accept.
+const gaConsentDefaultScript = `
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied',
+  });
+`;
+const gaConfigScript = `
+  gtag('js', new Date());
+  gtag('config', ${JSON.stringify(siteConfig.gaMeasurementId)});
+`;
 ---
 
 <!doctype html>
@@ -24,10 +44,10 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.url).toString();
     <!-- Pass-through Trusted Types `default` policy, registered before
          any other script runs. Required because the CSP set by
          worker/index.ts includes `require-trusted-types-for 'script'`,
-         and AdSense's own internal script injection ships no Trusted
-         Types policy of its own — this accepts any unqualified sink
-         usage the same way the main bytetech247.com site's identical
-         policy does. -->
+         and both AdSense's and gtag.js's own internal script injection
+         ship no Trusted Types policy of their own — this accepts any
+         unqualified sink usage the same way the main bytetech247.com
+         site's identical policy does. -->
     <script is:inline>
       if (window.trustedTypes?.createPolicy) {
         window.trustedTypes.createPolicy("default", {
@@ -37,6 +57,37 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.url).toString();
         });
       }
     </script>
+    <!-- Google tag (gtag.js), loaded unconditionally and statically —
+         not injected via JS after consent — specifically so tools that
+         verify GA installation by reading raw page source (rather than
+         clicking through the cookie banner) find it. What actually keeps
+         this GDPR/UK-consent-compliant is Consent Mode v2: every visitor
+         defaults to `denied` on all four signals below, so gtag.js sends
+         only anonymous, cookieless pings until CookieConsent.astro's
+         Accept handler calls gtag('consent', 'update', ...). Order here
+         matters and mirrors Google's own documented Consent Mode
+         snippet: the default-consent script must execute before gtag.js's
+         async-loaded internals do, so it's placed in its own script tag
+         ahead of the <script src> tag rather than combined with the
+         'js'/'config' calls after it. `set:html` (not `define:vars`) is
+         what's used for the two inline blocks — this needs the literal
+         script text in the static HTML for the same source-visibility
+         reason the whole tag is static, and `define:vars` doesn't
+         guarantee that (see BlogPostLayout.astro's JSON-LD script for
+         the same pattern already used elsewhere in this codebase). -->
+    {
+      siteConfig.gaMeasurementId && (
+        <>
+          <script is:inline set:html={gaConsentDefaultScript} />
+          <script
+            is:inline
+            async
+            src={`https://www.googletagmanager.com/gtag/js?id=${siteConfig.gaMeasurementId}`}
+          />
+          <script is:inline set:html={gaConfigScript} />
+        </>
+      )
+    }
     <script is:inline>
       // Applied before first paint to avoid a flash of the wrong theme.
       // No astro:after-swap re-application needed — this is a single

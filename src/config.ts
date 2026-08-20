@@ -26,7 +26,7 @@ export const siteConfig = {
   // the main bytetech247.com site or any other tool subdomain). Empty
   // string is a safe no-op — BaseLayout only renders the gtag.js loader
   // when this is set, same convention as adsensePublisherId below.
-  gaMeasurementId: "G-4RDZXGQ56R",
+  gaMeasurementId: "G-ZL9QZQWL4N",
 
   adsensePublisherId: "ca-pub-2225877475261768",
 

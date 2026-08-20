@@ -1,23 +1,28 @@
 ---
-// Opt-in consent gate for Google Analytics and (once approved) AdSense —
-// neither loads until the visitor actively accepts. This is the correct
-// default-off posture for GDPR/UK consent rules, applied to every visitor
-// rather than only ones detected as EU/UK (this is a static site with no
-// server-side geo-IP available, so "ask everyone" is the simplest
-// defensible approach rather than building geo-detection for it).
+// Opt-in consent gate. Google Analytics no longer loads from here — see
+// BaseLayout.astro, which loads gtag.js unconditionally and statically
+// (Consent Mode v2, defaulted to denied) so GA-verification tools that
+// only read raw page source can find the tag. This component's job for
+// GA is just the 'update' call once the visitor actually accepts.
 //
-// Dynamically injecting the gtag.js/adsbygoogle.js <script> tags (instead
-// of the old unconditional static tags in BaseLayout) works cleanly under
-// this site's CSP specifically because of how 'strict-dynamic' is meant
-// to be used: this component's own inline script carries the Worker's
-// rotating nonce (every <script> element gets one, see worker/index.ts),
-// and a nonce-trusted script is allowed to create additional <script>
-// elements via the DOM that inherit that trust automatically — no nonce
-// copying needed. This is different from — and doesn't repeat — the
-// earlier failure with Cloudflare's Google Tag Gateway, which rewrote a
-// *static* <script src> at the edge and lost the nonce in the process;
-// nothing here rewrites existing markup, it only inserts new elements
-// from a script that was already trusted to run.
+// AdSense is different: no script tag exists on the page at all until
+// Accept, rather than relying on Consent Mode to gate it — simplest way
+// to guarantee no ad script (and no ad cookies) for a visitor who
+// rejects, and there's no source-visibility requirement for it the way
+// there is for GA.
+//
+// Dynamically injecting the adsbygoogle.js <script> tag works cleanly
+// under this site's CSP specifically because of how 'strict-dynamic' is
+// meant to be used: this component's own inline script carries the
+// Worker's rotating nonce (every <script> element gets one, see
+// worker/index.ts), and a nonce-trusted script is allowed to create
+// additional <script> elements via the DOM that inherit that trust
+// automatically — no nonce copying needed. This is different from — and
+// doesn't repeat — the earlier failure with Cloudflare's Google Tag
+// Gateway, which rewrote a *static* <script src> at the edge and lost
+// the nonce in the process; nothing here rewrites existing markup, it
+// only inserts new elements from a script that was already trusted to
+// run.
 //
 // Setting `.src` on a script element created this way is also a Trusted
 // Types sink (`require-trusted-types-for 'script'` in the CSP) — covered
@@ -52,25 +57,18 @@ import { siteConfig } from "../config";
   </div>
 </div>
 
-<script
-  define:vars={{
-    gaId: siteConfig.gaMeasurementId,
-    adsenseId: siteConfig.adsensePublisherId,
-  }}
->
+<script is:inline define:vars={{ adsenseId: siteConfig.adsensePublisherId }}>
   const STORAGE_KEY = "cookie-consent";
 
-  function loadAnalytics() {
-    if (!gaId) return;
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
-    document.head.appendChild(script);
-
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = (...args) => dataLayer.push(args);
-    gtag("js", new Date());
-    gtag("config", gaId);
+  function grantConsent() {
+    if (typeof window.gtag === "function") {
+      window.gtag("consent", "update", {
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
+        analytics_storage: "granted",
+      });
+    }
   }
 
   function loadAds() {
@@ -100,7 +98,7 @@ import { siteConfig } from "../config";
   const stored = localStorage.getItem(STORAGE_KEY);
 
   if (stored === "accepted") {
-    loadAnalytics();
+    grantConsent();
     loadAds();
   } else if (stored !== "rejected") {
     banner.hidden = false;
@@ -111,7 +109,7 @@ import { siteConfig } from "../config";
     ?.addEventListener("click", () => {
       localStorage.setItem(STORAGE_KEY, "accepted");
       banner.hidden = true;
-      loadAnalytics();
+      grantConsent();
       loadAds();
     });
 
